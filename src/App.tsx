@@ -157,14 +157,14 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col font-sans relative overflow-x-hidden transition-colors duration-200 ${
+      className={`min-h-screen flex flex-col font-sans relative overflow-x-hidden transition-colors duration-200 print:min-h-0 print:bg-white print:text-slate-900 print:p-0 print:m-0 print:overflow-visible ${
         isDark
           ? 'bg-[#080c14] text-slate-100 selection:bg-[#94E1FF]/25 selection:text-[#94E1FF]'
           : 'bg-[#f8fafc] text-slate-900 selection:bg-[#94E1FF]/35 selection:text-slate-900'
       }`}
     >
       {/* Ambient background glass gradients with #94E1FF calming ice-sky glow */}
-      <div className="ambient-glow pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      <div className="ambient-glow pointer-events-none fixed inset-0 z-0 overflow-hidden no-print print:hidden">
         {isDark ? (
           <>
             <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[850px] h-[450px] bg-gradient-to-b from-[#94E1FF]/15 via-teal-500/10 to-transparent blur-3xl opacity-80" />
