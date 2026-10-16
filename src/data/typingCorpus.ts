@@ -59,7 +59,7 @@ export const TYPING_CATEGORIES: TextCategory[] = [
   
       'Following consideration of the arguments presented by counsel, the tribunal finds that the submitted materials establish a sufficient factual basis for further proceedings. The parties shall comply with all subsequent directions issued by the presiding officer.',
   
-      'The undersigned acknowledges receipt of the notice and confirms that the attached schedule accurately identifies the documents produced in response to the request. All reservations of rights and applicable privileges remain expressly preserved.'
+      'The undersigned acknowledges receipt of the notice and confirms that the attached schedule accurately identifies the documents produced in response to the request. All reservations of rights and applicable privileges remain expressly preserved.',
   
     ],
   },
@@ -85,7 +85,7 @@ export const TYPING_CATEGORIES: TextCategory[] = [
   
       'Medication reconciliation is an essential component of safe transitions between inpatient and outpatient care. Clinicians must verify the prescribed dose, administration schedule, potential interactions, allergies, and any changes introduced during hospitalization.',
   
-      'The multidisciplinary review considered diagnostic uncertainty, functional status, treatment response, and the patient preferences documented during consultation. The resulting care plan included appropriate follow-up, symptom monitoring, and criteria for reassessment if the clinical condition changed.'
+      'The multidisciplinary review considered diagnostic uncertainty, functional status, treatment response, and the patient preferences documented during consultation. The resulting care plan included appropriate follow-up, symptom monitoring, and criteria for reassessment if the clinical condition changed.',
 
     ],
   },
@@ -111,7 +111,7 @@ export const TYPING_CATEGORIES: TextCategory[] = [
   
       'At dawn, the city awakened gradually, first through the distant rumble of delivery trucks and then through the voices of vendors arranging their stalls. The ordinary rhythm of morning concealed countless small acts of courage and perseverance.',
   
-      'A meaningful life need not be measured exclusively by achievement or recognition. It may instead emerge from attention, compassion, honest work, and the quiet determination to improve the circumstances of those around us.'
+      'A meaningful life need not be measured exclusively by achievement or recognition. It may instead emerge from attention, compassion, honest work, and the quiet determination to improve the circumstances of those around us.',
 
     ],
   },
@@ -141,7 +141,7 @@ export const TYPING_CATEGORIES: TextCategory[] = [
   
       'type Listener<T> = (event: T) => void; class EventBus<T> { private listeners = new Set<Listener<T>>(); subscribe(listener: Listener<T>): () => void { this.listeners.add(listener); return () => this.listeners.delete(listener); } emit(event: T): void { this.listeners.forEach(listener => listener(event)); } }',
   
-      'const paginate = <T>(items: T[], page: number, pageSize: number) => { if (page < 1 || pageSize < 1) throw new RangeError("Invalid pagination parameters"); const start = (page - 1) * pageSize; return { items: items.slice(start, start + pageSize), page, pageSize, total: items.length, totalPages: Math.ceil(items.length / pageSize) }; };'
+      'const paginate = <T>(items: T[], page: number, pageSize: number) => { if (page < 1 || pageSize < 1) throw new RangeError("Invalid pagination parameters"); const start = (page - 1) * pageSize; return { items: items.slice(start, start + pageSize), page, pageSize, total: items.length, totalPages: Math.ceil(items.length / pageSize) }; };',
 
     ],
   },
