@@ -52,8 +52,48 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
       .catch((err) => console.error('Failed to generate QR code', err));
   }, [verificationUrl]);
 
+  // Manage print lifecycle: strip dark mode during print so paper/PDF outputs clean white diploma
+  useEffect(() => {
+    const handleBeforePrint = () => {
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
+      document.body.classList.add('is-printing-certificate');
+    };
+
+    const handleAfterPrint = () => {
+      document.body.classList.remove('is-printing-certificate');
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    };
+
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, [theme]);
+
   const handlePrint = () => {
-    window.print();
+    const root = document.documentElement;
+    const wasDark = root.classList.contains('dark') || theme === 'dark';
+    if (wasDark) {
+      root.classList.remove('dark');
+      document.body.classList.remove('dark');
+    }
+    document.body.classList.add('is-printing-certificate');
+
+    // Give browser paint engine 50ms to settle DOM before capturing print canvas
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        document.body.classList.remove('is-printing-certificate');
+        if (wasDark) {
+          root.classList.add('dark');
+        }
+      }, 300);
+    }, 50);
   };
 
   const handleCopyLink = () => {
@@ -65,10 +105,10 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 md:p-8 bg-black/85 backdrop-blur-md overflow-y-auto font-sans certificate-modal-overlay animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 md:p-8 bg-black/85 backdrop-blur-md overflow-y-auto font-sans certificate-modal-overlay animate-in fade-in duration-200 print:static print:inset-auto print:bg-white print:p-0 print:m-0 print:overflow-visible print:backdrop-blur-none print:shadow-none print:border-none print:animate-none"
     >
       <div
-        className={`relative max-w-4xl w-full my-2 sm:my-6 rounded-2xl shadow-2xl p-4 sm:p-8 animate-in zoom-in-95 transition-colors certificate-modal-wrapper ${
+        className={`relative max-w-4xl w-full my-2 sm:my-6 rounded-2xl shadow-2xl p-4 sm:p-8 animate-in zoom-in-95 transition-colors certificate-modal-wrapper print:static print:max-w-none print:w-full print:m-0 print:p-0 print:border-none print:shadow-none print:bg-white print:animate-none ${
           isDark
             ? 'bg-slate-900/95 border border-white/15 text-slate-100 shadow-black/60'
             : 'bg-white/95 border border-slate-200 text-slate-900 shadow-slate-300/60'
@@ -76,7 +116,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
       >
         {/* Sticky Top Control Bar (Never scrolled out of view, hidden during print) */}
         <div
-          className={`sticky top-0 z-30 flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 pt-2 border-b mb-6 gap-3 print-control-bar no-print backdrop-blur-xl ${
+          className={`sticky top-0 z-30 flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 pt-2 border-b mb-6 gap-3 print-control-bar no-print print:hidden backdrop-blur-xl ${
             isDark
               ? 'border-white/10 bg-slate-900/95 text-slate-100'
               : 'border-slate-200 bg-white/95 text-slate-900'
@@ -137,12 +177,12 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
         </div>
 
         {/* Printable Credential Sheet */}
-        <div className="border-2 border-slate-300 rounded-xl p-6 sm:p-10 md:p-12 bg-[#fafaf8] text-slate-900 space-y-7 sm:space-y-8 text-center relative certificate-sheet shadow-xl">
+        <div className="border-2 border-slate-300 rounded-xl p-6 sm:p-10 md:p-12 bg-[#fafaf8] text-slate-900 space-y-7 sm:space-y-8 text-center relative certificate-sheet shadow-xl print:m-0 print:w-full print:border-2 print:border-slate-800 print:bg-white print:shadow-none print:p-6 print:rounded-lg">
           {/* Subtle Guilloche Corner Accents */}
-          <div className="absolute top-3 left-3 h-8 w-8 border-t-2 border-l-2 border-slate-700 pointer-events-none" />
-          <div className="absolute top-3 right-3 h-8 w-8 border-t-2 border-r-2 border-slate-700 pointer-events-none" />
-          <div className="absolute bottom-3 left-3 h-8 w-8 border-b-2 border-l-2 border-slate-700 pointer-events-none" />
-          <div className="absolute bottom-3 right-3 h-8 w-8 border-b-2 border-r-2 border-slate-700 pointer-events-none" />
+          <div className="absolute top-3 left-3 h-8 w-8 border-t-2 border-l-2 border-slate-700 pointer-events-none print:border-slate-900" />
+          <div className="absolute top-3 right-3 h-8 w-8 border-t-2 border-r-2 border-slate-700 pointer-events-none print:border-slate-900" />
+          <div className="absolute bottom-3 left-3 h-8 w-8 border-b-2 border-l-2 border-slate-700 pointer-events-none print:border-slate-900" />
+          <div className="absolute bottom-3 right-3 h-8 w-8 border-b-2 border-r-2 border-slate-700 pointer-events-none print:border-slate-900" />
 
           {/* Header */}
           <div className="space-y-2">
@@ -227,7 +267,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
             <div className="flex items-center justify-end gap-3 text-right">
               <div>
                 <div className="text-[10px] text-slate-500 uppercase font-bold">Scan to Verify</div>
-                <div className="text-[10px] font-bold text-slate-950 underline">typecert.org</div>
+                <div className="text-[10px] font-bold text-slate-950 underline">type-cert-enterprise.vercel.app</div>
                 <div className="text-[8px] text-slate-500 truncate max-w-[110px] mt-0.5">
                   {certificate.signature.slice(0, 16)}...
                 </div>
@@ -253,7 +293,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
 
         {/* Bottom Secondary Action Bar (Hidden during print) */}
         <div
-          className={`mt-6 pt-4 border-t flex flex-wrap items-center justify-between gap-3 text-xs font-mono no-print ${
+          className={`mt-6 pt-4 border-t flex flex-wrap items-center justify-between gap-3 text-xs font-mono no-print print:hidden ${
             isDark ? 'border-white/10 text-slate-400' : 'border-slate-200 text-slate-500'
           }`}
         >
