@@ -27,7 +27,13 @@ export const VerificationPortal: React.FC<VerificationPortalProps> = ({
 }) => {
   const [searchCode, setSearchCode] = useState(initialSearchId);
   const [selectedCert, setSelectedCert] = useState<Certificate | null>(
-    certificates.find((c) => c.id === initialSearchId) || certificates[0] || null
+    certificates.find(
+      (c) =>
+        c.id.toUpperCase() === initialSearchId.toUpperCase() ||
+        c.publicCode.toUpperCase() === initialSearchId.toUpperCase()
+    ) ||
+      certificates[0] ||
+      null
   );
   const [copiedSig, setCopiedSig] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -36,10 +42,26 @@ export const VerificationPortal: React.FC<VerificationPortalProps> = ({
 
   const isDark = theme === 'dark';
 
+  // Automatically execute search when initialSearchId is provided (e.g. from /verify/:id URL)
+  React.useEffect(() => {
+    if (initialSearchId && initialSearchId.trim()) {
+      handleSearch(initialSearchId.trim());
+    }
+  }, [initialSearchId]);
+
   const handleSearch = async (codeToSearch: string) => {
     const clean = codeToSearch.trim().toUpperCase();
     setSearchCode(clean);
     setLookupError(null);
+
+    // Keep URL in sync with verified ID
+    if (window.location.pathname.startsWith('/verify/') || window.location.hash.includes('verify/')) {
+      try {
+        window.history.replaceState(null, '', `/verify/${clean}`);
+      } catch {
+        // Safe fallback in restricted environments
+      }
+    }
 
     const found = certificates.find(
       (c) => c.id.toUpperCase() === clean || c.publicCode.toUpperCase() === clean
