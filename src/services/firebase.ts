@@ -165,14 +165,40 @@ export async function saveCertificateToFirestore(cert: Certificate): Promise<voi
 }
 
 export async function getCertificateFromFirestore(certId: string): Promise<Certificate | null> {
-  const path = `certificates/${certId}`;
+  const cleanId = certId.trim();
+  const path = `certificates/${cleanId}`;
   try {
-    const certRef = doc(db, 'certificates', certId);
+    const certRef = doc(db, 'certificates', cleanId);
     const snap = await getDoc(certRef);
-    if (!snap.exists()) return null;
-    return snap.data() as Certificate;
+    if (snap.exists()) {
+      return snap.data() as Certificate;
+    }
+
+    // Fallback: try uppercase document ID
+    const upperRef = doc(db, 'certificates', cleanId.toUpperCase());
+    const upperSnap = await getDoc(upperRef);
+    if (upperSnap.exists()) {
+      return upperSnap.data() as Certificate;
+    }
+
+    // Fallback: query collection for publicCode or id match
+    const colRef = collection(db, 'certificates');
+    const q1 = query(colRef, where('publicCode', '==', cleanId.toUpperCase()), limit(1));
+    const snap1 = await getDocs(q1);
+    if (!snap1.empty) {
+      return snap1.docs[0].data() as Certificate;
+    }
+
+    const q2 = query(colRef, where('id', '==', cleanId.toUpperCase()), limit(1));
+    const snap2 = await getDocs(q2);
+    if (!snap2.empty) {
+      return snap2.docs[0].data() as Certificate;
+    }
+
+    return null;
   } catch (error) {
-    handleFirestoreError(error, OperationType.GET, path);
+    console.warn('Firestore certificate lookup warning:', error);
+    return null;
   }
 }
 
