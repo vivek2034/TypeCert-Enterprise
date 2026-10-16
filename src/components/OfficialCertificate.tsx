@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Certificate } from '../types';
-import { ShieldCheck, Printer, X, Check, Copy } from 'lucide-react';
+import { ShieldCheck, Printer, X, Check, Copy, Download, Loader2 } from 'lucide-react';
 
 interface OfficialCertificateProps {
   certificate: Certificate;
@@ -16,7 +18,10 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
 }) => {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const qrContainerRef = useRef<HTMLDivElement>(null);
 
   const verificationUrl =
     typeof window !== 'undefined' && window.location.origin
@@ -41,9 +46,9 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
   }, [onClose]);
 
   useEffect(() => {
-    // Generate high-resolution QR code for razor-sharp paper printing
+    // Generate high-resolution QR code (512px) for razor-sharp scanning in PDF & print
     QRCode.toDataURL(verificationUrl, {
-      width: 256,
+      width: 512,
       margin: 1,
       color: {
         dark: '#0f172a',
@@ -78,6 +83,83 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
     };
   }, [theme]);
 
+  // Direct High-Resolution PDF Download with lossless QR code placement
+  const handleDownloadPdf = async () => {
+    if (!sheetRef.current || isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+
+    try {
+      const sheetEl = sheetRef.current;
+
+      // Render the DOM certificate sheet to high-DPI canvas (300 DPI equivalent)
+      const canvas = await html2canvas(sheetEl, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL('image/png', 1.0);
+
+      // Create landscape Letter PDF (279.4 x 215.9 mm)
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'letter',
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const margin = 8;
+      const availWidth = pageWidth - margin * 2;
+      const availHeight = pageHeight - margin * 2;
+
+      const imgRatio = canvas.width / canvas.height;
+      let renderWidth = availWidth;
+      let renderHeight = availWidth / imgRatio;
+
+      if (renderHeight > availHeight) {
+        renderHeight = availHeight;
+        renderWidth = availHeight * imgRatio;
+      }
+
+      const x = (pageWidth - renderWidth) / 2;
+      const y = (pageHeight - renderHeight) / 2;
+
+      // 1. Draw crisp certificate canvas image
+      pdf.addImage(imgData, 'PNG', x, y, renderWidth, renderHeight, undefined, 'FAST');
+
+      // 2. Overlay uncompressed raw QR code over the exact bounding box for guaranteed 100% scan clarity
+      if (qrDataUrl && qrContainerRef.current) {
+        const qrEl = qrContainerRef.current;
+        const sheetRect = sheetEl.getBoundingClientRect();
+        const qrRect = qrEl.getBoundingClientRect();
+
+        const relX = (qrRect.left - sheetRect.left) / sheetRect.width;
+        const relY = (qrRect.top - sheetRect.top) / sheetRect.height;
+        const relW = qrRect.width / sheetRect.width;
+        const relH = qrRect.height / sheetRect.height;
+
+        const pdfQrX = x + relX * renderWidth;
+        const pdfQrY = y + relY * renderHeight;
+        const pdfQrW = relW * renderWidth;
+        const pdfQrH = relH * renderHeight;
+
+        pdf.addImage(qrDataUrl, 'PNG', pdfQrX, pdfQrY, pdfQrW, pdfQrH);
+      }
+
+      // Download file directly
+      pdf.save(`TypeCert-${certificate.publicCode}.pdf`);
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      // Fallback to browser print if canvas fails
+      window.print();
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   const handlePrint = () => {
     const root = document.documentElement;
     const wasDark = root.classList.contains('dark') || theme === 'dark';
@@ -87,7 +169,6 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
     }
     document.body.classList.add('is-printing-certificate');
 
-    // Give browser paint engine 50ms to settle DOM before capturing print canvas
     setTimeout(() => {
       window.print();
       setTimeout(() => {
@@ -143,7 +224,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handleCopyLink}
-              className={`flex items-center gap-1.5 px-3.5 py-2 font-medium text-xs rounded-xl border transition-all cursor-pointer backdrop-blur-md active:scale-95 ${
+              className={`flex items-center gap-1.5 px-3 py-2 font-medium text-xs rounded-xl border transition-all cursor-pointer backdrop-blur-md active:scale-95 ${
                 isDark
                   ? 'bg-white/10 hover:bg-white/15 text-slate-200 border-white/15'
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
@@ -154,14 +235,33 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
               <span>{copiedLink ? 'Copied Link' : 'Share Link'}</span>
             </button>
 
-            {/* Primary Print to PDF Button */}
+            {/* Primary Direct Download PDF Button */}
+            <button
+              onClick={handleDownloadPdf}
+              disabled={isGeneratingPdf}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#94E1FF] via-cyan-400 to-teal-400 text-slate-950 font-bold text-xs uppercase hover:brightness-110 transition-all rounded-xl cursor-pointer shadow-md shadow-[#94E1FF]/25 active:scale-95 disabled:opacity-60"
+              title="Download high-resolution official PDF with QR code"
+            >
+              {isGeneratingPdf ? (
+                <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
+              ) : (
+                <Download className="h-4 w-4 text-slate-950" />
+              )}
+              <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}</span>
+            </button>
+
+            {/* Secondary Browser Print Button */}
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#94E1FF] via-cyan-400 to-teal-400 text-slate-950 font-bold text-xs uppercase hover:brightness-110 transition-all rounded-xl cursor-pointer shadow-md shadow-[#94E1FF]/25 active:scale-95"
-              title="Print certificate or save as PDF"
+              className={`flex items-center gap-1.5 px-3 py-2 font-medium text-xs rounded-xl border transition-all cursor-pointer backdrop-blur-md active:scale-95 ${
+                isDark
+                  ? 'bg-white/10 hover:bg-white/15 text-slate-200 border-white/15'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+              }`}
+              title="Print via browser dialog"
             >
-              <Printer className="h-4 w-4 text-slate-950" />
-              <span>Print to PDF</span>
+              <Printer className="h-3.5 w-3.5" />
+              <span>Print</span>
             </button>
 
             <button
@@ -180,7 +280,10 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
         </div>
 
         {/* Printable Credential Sheet */}
-        <div className="border-2 border-slate-300 rounded-xl p-6 sm:p-10 md:p-12 bg-[#fafaf8] text-slate-900 space-y-7 sm:space-y-8 text-center relative certificate-sheet shadow-xl print:m-0 print:w-full print:border-2 print:border-slate-800 print:bg-white print:shadow-none print:p-6 print:rounded-lg">
+        <div
+          ref={sheetRef}
+          className="border-2 border-slate-300 rounded-xl p-6 sm:p-10 md:p-12 bg-[#fafaf8] text-slate-900 space-y-7 sm:space-y-8 text-center relative certificate-sheet shadow-xl print:m-0 print:w-full print:border-2 print:border-slate-800 print:bg-white print:shadow-none print:p-6 print:rounded-lg"
+        >
           {/* Subtle Guilloche Corner Accents */}
           <div className="absolute top-3 left-3 h-8 w-8 border-t-2 border-l-2 border-slate-700 pointer-events-none print:border-slate-900" />
           <div className="absolute top-3 right-3 h-8 w-8 border-t-2 border-r-2 border-slate-700 pointer-events-none print:border-slate-900" />
@@ -276,8 +379,8 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
                 </div>
               </div>
 
-              {/* Real QR Code Image */}
-              <div className="p-1 border border-slate-300 bg-white rounded shrink-0">
+              {/* Real QR Code Image with Dedicated Ref for Exact PDF Placement */}
+              <div ref={qrContainerRef} className="p-1 border border-slate-300 bg-white rounded shrink-0">
                 {qrDataUrl ? (
                   <img
                     src={qrDataUrl}
@@ -303,16 +406,32 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
           <div className="flex items-center gap-2">
             <span>Official Proctored Diploma</span>
             <span>·</span>
-            <span className="text-teal-600 dark:text-[#94E1FF] font-bold">Standard 8.5" x 11" Landscape Ready</span>
+            <span className="text-teal-600 dark:text-[#94E1FF] font-bold">Standard 8.5" x 11" Landscape PDF</span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-[#94E1FF] via-cyan-400 to-teal-400 text-slate-950 font-bold text-xs uppercase rounded-xl hover:brightness-110 transition-all cursor-pointer shadow-sm active:scale-95"
+              onClick={handleDownloadPdf}
+              disabled={isGeneratingPdf}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-[#94E1FF] via-cyan-400 to-teal-400 text-slate-950 font-bold text-xs uppercase rounded-xl hover:brightness-110 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-60"
             >
-              <Printer className="h-3.5 w-3.5 text-slate-950" />
-              <span>Print to PDF</span>
+              {isGeneratingPdf ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-950" />
+              ) : (
+                <Download className="h-3.5 w-3.5 text-slate-950" />
+              )}
+              <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}</span>
+            </button>
+            <button
+              onClick={handlePrint}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                isDark
+                  ? 'border-white/10 text-slate-300 hover:text-white hover:bg-white/10'
+                  : 'border-slate-200 text-slate-700 hover:text-slate-950 hover:bg-slate-100'
+              }`}
+            >
+              <Printer className="h-3.5 w-3.5" />
+              <span>Print</span>
             </button>
             <button
               onClick={onClose}
