@@ -92,7 +92,19 @@ export function getStoredCertificates(): Certificate[] {
       return SEED_CERTIFICATES;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_CERTIFICATES;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const existingIds = new Set(parsed.map((c: Certificate) => c.id?.toUpperCase()));
+      const missingSeeds = SEED_CERTIFICATES.filter(
+        (seed) => !existingIds.has(seed.id.toUpperCase())
+      );
+      if (missingSeeds.length > 0) {
+        const merged = [...parsed, ...missingSeeds];
+        localStorage.setItem(CERTIFICATES_KEY, JSON.stringify(merged));
+        return merged;
+      }
+      return parsed;
+    }
+    return SEED_CERTIFICATES;
   } catch {
     return SEED_CERTIFICATES;
   }
