@@ -129,6 +129,7 @@
   }
 
   /* Completely hide all website chrome, headers, footers, main content, and buttons */
+  body.is-printing-certificate #root,
   header,
   footer,
   main,
