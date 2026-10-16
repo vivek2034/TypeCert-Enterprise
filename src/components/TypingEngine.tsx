@@ -267,7 +267,7 @@ export const TypingEngine: React.FC<TypingEngineProps> = ({
       issuedAt: nowIso,
       expiresAt: expDate.toISOString(),
       signature: generateDigitalSignature(certId, metrics.netWpm, metrics.accuracyPercentage, nowIso),
-      qrPayload: `https://typecert.org/verify/${certId}`,
+      qrPayload: `https://type-cert-enterprise.vercel.app/verify/${certId}`,
       antiCheatScore: pasteAttempts > 0 ? 75.0 : 99.4,
       proctorStatus: pasteAttempts > 2 ? 'FLAGGED' : 'VERIFIED',
       telemetrySummary: {
