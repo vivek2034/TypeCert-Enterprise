@@ -1,5 +1,15 @@
 {
+  "framework": "vite",
+  "cleanUrls": true,
   "rewrites": [
+    {
+      "source": "/verify/:id*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!assets/|.*\\..*).*)",
+      "destination": "/index.html"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
