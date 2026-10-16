@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import QRCode from 'qrcode';
-import jsPDF from 'jspdf';
-import { toCanvas } from 'html-to-image';
 import { Certificate } from '../types';
 import { ShieldCheck, Printer, X, Check, Copy, Download, Loader2 } from 'lucide-react';
 
@@ -92,6 +90,14 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
 
     try {
       const sheetEl = sheetRef.current;
+
+      // Dynamically load html-to-image and jsPDF on demand so the initial bundle stays lightweight
+      const [{ toCanvas }, jspdfModule] = await Promise.all([
+        import('html-to-image'),
+        import('jspdf'),
+      ]);
+
+      const jsPDF = jspdfModule.default || jspdfModule.jsPDF;
 
       // Render the DOM certificate sheet to high-DPI canvas (300 DPI equivalent)
       // Uses browser-native foreignObject rendering so modern CSS colors (like OKLCH) render without parser errors
@@ -380,7 +386,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
             <div className="flex items-center justify-end gap-3 text-right">
               <div>
                 <div className="text-[10px] text-slate-500 uppercase font-bold">Scan to Verify</div>
-                <div className="text-[10px] font-bold text-slate-950 underline">typecert.org</div>
+                <div className="text-[10px] font-bold text-slate-950 underline">type-cert-enterprise.vercel.app</div>
                 <div className="text-[8px] text-slate-500 truncate max-w-[110px] mt-0.5">
                   {certificate.signature.slice(0, 16)}...
                 </div>
