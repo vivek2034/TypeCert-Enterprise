@@ -18,7 +18,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  const verificationUrl = `https://typecert.org/verify/${certificate.publicCode}`;
+  const verificationUrl = `https://type-cert-enterprise.vercel.app/verify/${certificate.publicCode}`;
   const isDark = theme === 'dark';
 
   // Ensure modal scrolls to the top upon opening
