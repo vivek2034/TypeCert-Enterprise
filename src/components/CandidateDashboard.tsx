@@ -56,7 +56,7 @@ export const CandidateDashboard: React.FC<CandidateDashboardProps> = ({
   );
 
   const copyVerifyLink = (id: string) => {
-    navigator.clipboard.writeText(`https://typecert.org/verify/${id}`);
+    navigator.clipboard.writeText(`https://type-cert-enterprise.vercel.app/verify/${id}`);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
