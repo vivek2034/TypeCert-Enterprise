@@ -54,6 +54,41 @@ export default function App() {
     }
   }, [theme]);
 
+  // Detect direct URL routing (e.g. /verify/TC-NOV-202610-WF6TJD or #verify/...)
+  useEffect(() => {
+    const handleRoute = () => {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      const search = window.location.search;
+
+      let extractedId = '';
+
+      if (path.includes('/verify/')) {
+        const after = path.split('/verify/')[1];
+        if (after) extractedId = decodeURIComponent(after.split('/')[0]).trim();
+      } else if (hash.includes('verify/')) {
+        const after = hash.split('verify/')[1];
+        if (after) extractedId = decodeURIComponent(after.split('/')[0]).trim();
+      } else if (search.includes('verify=')) {
+        const params = new URLSearchParams(search);
+        extractedId = params.get('verify')?.trim() || '';
+      }
+
+      if (extractedId) {
+        setPortalSearchId(extractedId);
+        setActiveTab('portal');
+      }
+    };
+
+    handleRoute();
+    window.addEventListener('popstate', handleRoute);
+    window.addEventListener('hashchange', handleRoute);
+    return () => {
+      window.removeEventListener('popstate', handleRoute);
+      window.removeEventListener('hashchange', handleRoute);
+    };
+  }, []);
+
   // Initialize storage & auth listener
   useEffect(() => {
     const loadedCerts = getStoredCertificates();
