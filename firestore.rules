@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Catch-all Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation for User profile
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'email', 'displayName', 'role']) &&
+             data.keys().hasOnly(['id', 'email', 'displayName', 'photoURL', 'role', 'createdAt', 'updatedAt']) &&
+             data.id is string && data.id == request.auth.uid &&
+             data.email is string && data.email.size() <= 255 &&
+             data.displayName is string && data.displayName.size() <= 100 &&
+             data.role in ['candidate', 'employer', 'admin'];
+    }
+
+    // Validation for Certificate
+    function isValidCertificate(data) {
+      return data.keys().hasAll(['id', 'publicCode', 'userId', 'candidateName', 'tier', 'netWpm', 'accuracyPercentage', 'signature', 'proctorStatus']) &&
+             data.id is string && data.id.size() <= 64 &&
+             data.publicCode is string && data.publicCode.size() <= 64 &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.candidateName is string && data.candidateName.size() <= 100 &&
+             data.tier in ['NOVICE', 'INTERMEDIATE', 'PROFICIENT', 'ADVANCED', 'MASTER', 'ELITE'] &&
+             data.netWpm is number && data.netWpm >= 0 && data.netWpm <= 300 &&
+             data.accuracyPercentage is number && data.accuracyPercentage >= 0 && data.accuracyPercentage <= 100 &&
+             data.signature is string && data.signature.size() <= 256 &&
+             data.proctorStatus in ['VERIFIED', 'FLAGGED', 'REVOKED'];
+    }
+
+    // Validation for TestSession
+    function isValidTestSession(data) {
+      return data.keys().hasAll(['id', 'userId', 'category', 'netWpm', 'grossWpm', 'accuracy', 'durationSeconds']) &&
+             data.id is string && data.id.size() <= 64 &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.category is string && data.category.size() <= 100 &&
+             data.netWpm is number && data.netWpm >= 0 &&
+             data.grossWpm is number && data.grossWpm >= 0 &&
+             data.accuracy is number && data.accuracy >= 0 && data.accuracy <= 100 &&
+             data.durationSeconds is number && data.durationSeconds > 0;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // PII protection: no blanket user listing
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt']);
+      allow delete: if false;
+
+      // Subcollection for user test sessions
+      match /sessions/{sessionId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidTestSession(incoming());
+        allow update, delete: if false; // Sessions are immutable audit history
+      }
+    }
+
+    // Certificates collection (Publicly readable for employer verification)
+    match /certificates/{certificateId} {
+      allow get, list: if true; // Public credential validation for recruiters and ATS
+      allow create: if isSignedIn() && isValidCertificate(incoming());
+      allow update, delete: if false; // Minted certificates are immutable digital credentials
+    }
+  }
+}

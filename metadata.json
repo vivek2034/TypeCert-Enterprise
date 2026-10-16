@@ -1,0 +1,6 @@
+{
+  "name": "Free Typing Test with Certificate | 1-Min WPM Speed Test & Job Verification",
+  "description": "Take a free 1-minute, 30-second, or 2-minute typing speed test online. Check your exact Net Words Per Minute (WPM) and accuracy, and instantly download a verified, printable typing certificate with QR code for your job application, resume, or CV.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

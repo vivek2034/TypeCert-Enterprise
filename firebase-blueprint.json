@@ -1,0 +1,193 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Candidate or employer user profile",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user ID matching Firebase Auth UID"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 100
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Avatar photo URL"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["candidate", "employer", "admin"],
+          "description": "User role in the platform"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account update timestamp"
+        }
+      },
+      "required": ["id", "email", "displayName", "role"]
+    },
+    "Certificate": {
+      "title": "Certificate",
+      "description": "Verifiable typing proficiency certificate",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique certificate ID e.g. TC-MST-202610-8F92A4"
+        },
+        "publicCode": {
+          "type": "string",
+          "description": "Public verification code for employer lookup"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Candidate Firebase UID"
+        },
+        "candidateName": {
+          "type": "string",
+          "description": "Candidate full name",
+          "maxLength": 100
+        },
+        "candidateEmail": {
+          "type": "string",
+          "description": "Candidate email address"
+        },
+        "tier": {
+          "type": "string",
+          "enum": ["NOVICE", "INTERMEDIATE", "PROFICIENT", "ADVANCED", "MASTER", "ELITE"],
+          "description": "Proficiency tier"
+        },
+        "netWpm": {
+          "type": "number",
+          "description": "Certified Net WPM"
+        },
+        "grossWpm": {
+          "type": "number",
+          "description": "Gross raw WPM"
+        },
+        "accuracyPercentage": {
+          "type": "number",
+          "description": "Accuracy percentage"
+        },
+        "consistencyPercentage": {
+          "type": "number",
+          "description": "Cadence consistency score"
+        },
+        "durationSeconds": {
+          "type": "number",
+          "description": "Test benchmark duration in seconds"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of issuance"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of expiration"
+        },
+        "signature": {
+          "type": "string",
+          "description": "Ed25519 digital signature of credential"
+        },
+        "qrPayload": {
+          "type": "string",
+          "description": "Public URL encoded in QR code"
+        },
+        "antiCheatScore": {
+          "type": "number",
+          "description": "Anti-cheat confidence percentage"
+        },
+        "proctorStatus": {
+          "type": "string",
+          "enum": ["VERIFIED", "FLAGGED", "REVOKED"],
+          "description": "Verification status"
+        }
+      },
+      "required": ["id", "publicCode", "userId", "candidateName", "tier", "netWpm", "accuracyPercentage", "signature", "proctorStatus"]
+    },
+    "TestSession": {
+      "title": "TestSession",
+      "description": "Proctored typing test session history record",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Test session UUID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Candidate UID"
+        },
+        "category": {
+          "type": "string",
+          "description": "Benchmark category name"
+        },
+        "netWpm": {
+          "type": "number",
+          "description": "Net WPM attained"
+        },
+        "grossWpm": {
+          "type": "number",
+          "description": "Gross WPM attained"
+        },
+        "accuracy": {
+          "type": "number",
+          "description": "Accuracy percentage"
+        },
+        "consistency": {
+          "type": "number",
+          "description": "Consistency percentage"
+        },
+        "durationSeconds": {
+          "type": "number",
+          "description": "Test duration in seconds"
+        },
+        "antiCheatScore": {
+          "type": "number",
+          "description": "Anti-cheat score"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Session completion timestamp"
+        },
+        "certificateId": {
+          "type": "string",
+          "description": "Optional associated Certificate ID if minted"
+        }
+      },
+      "required": ["id", "userId", "category", "netWpm", "grossWpm", "accuracy", "durationSeconds"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores user profiles with authentication and role data"
+    },
+    "/certificates/{certificateId}": {
+      "schema": "Certificate",
+      "description": "Stores public verifiable typing certificates for employer validation"
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": "TestSession",
+      "description": "Stores candidate test session history and benchmark attempts"
+    }
+  }
+}
