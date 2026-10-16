@@ -272,6 +272,7 @@ export default function App() {
             certificates={certificates}
             initialSearchId={portalSearchId}
             theme={theme}
+            onViewOfficialCertificate={(cert) => setViewingCert(cert)}
           />
         )}
 
