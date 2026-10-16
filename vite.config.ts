@@ -1,7 +1,10 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { fileURLToPath } from 'url';
+import { defineConfig } from 'vite';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(() => {
   return {
@@ -9,6 +12,21 @@ export default defineConfig(() => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+      },
+    },
+    build: {
+      chunkSizeWarningLimit: 2000,
+      rollupOptions: {
+        onwarn(warning, defaultHandler) {
+          if (
+            warning.code === 'INEFFECTIVE_DYNAMIC_IMPORT' ||
+            warning.code === 'CIRCULAR_DEPENDENCY' ||
+            warning.code === 'MODULE_LEVEL_DIRECTIVE'
+          ) {
+            return;
+          }
+          defaultHandler(warning);
+        },
       },
     },
     server: {
