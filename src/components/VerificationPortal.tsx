@@ -13,17 +13,20 @@ import {
 import { Certificate } from '../types';
 import { getTierColor } from '../utils/certGenerator';
 import { OfficialCertificate } from './OfficialCertificate';
+import { getCertificateFromFirestore } from '../services/firebase';
 
 interface VerificationPortalProps {
   certificates: Certificate[];
   initialSearchId?: string;
   theme?: 'dark' | 'light';
+  onViewOfficialCertificate?: (cert: Certificate) => void;
 }
 
 export const VerificationPortal: React.FC<VerificationPortalProps> = ({
   certificates,
   initialSearchId = '',
   theme = 'dark',
+  onViewOfficialCertificate,
 }) => {
   const [searchCode, setSearchCode] = useState(initialSearchId);
   const [selectedCert, setSelectedCert] = useState<Certificate | null>(
@@ -75,7 +78,6 @@ export const VerificationPortal: React.FC<VerificationPortalProps> = ({
     // Fallback: Query live Firestore database
     setIsSearchingFirestore(true);
     try {
-      const { getCertificateFromFirestore } = await import('../services/firebase');
       const cloudCert = await getCertificateFromFirestore(clean);
       if (cloudCert) {
         setSelectedCert(cloudCert);
@@ -252,7 +254,13 @@ export const VerificationPortal: React.FC<VerificationPortalProps> = ({
             </div>
 
             <button
-              onClick={() => setShowPrintModal(true)}
+              onClick={() => {
+                if (onViewOfficialCertificate && selectedCert) {
+                  onViewOfficialCertificate(selectedCert);
+                } else {
+                  setShowPrintModal(true);
+                }
+              }}
               className={`px-4 py-2 rounded-xl text-xs font-medium transition-all border backdrop-blur-md cursor-pointer flex items-center gap-2 active:scale-95 ${
                 isDark
                   ? 'bg-white/10 hover:bg-white/15 text-white border-white/15'
@@ -557,6 +565,7 @@ export const VerificationPortal: React.FC<VerificationPortalProps> = ({
       {showPrintModal && selectedCert && (
         <OfficialCertificate
           certificate={selectedCert}
+          theme={theme}
           onClose={() => setShowPrintModal(false)}
         />
       )}
