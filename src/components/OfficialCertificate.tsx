@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { toCanvas } from 'html-to-image';
 import { Certificate } from '../types';
 import { ShieldCheck, Printer, X, Check, Copy, Download, Loader2 } from 'lucide-react';
 
@@ -22,6 +23,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
   const overlayRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const qrContainerRef = useRef<HTMLDivElement>(null);
+  const qrImageRef = useRef<HTMLImageElement>(null);
 
   const verificationUrl =
     typeof window !== 'undefined' && window.location.origin
@@ -130,9 +132,9 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
       // 1. Draw crisp certificate canvas image
       pdf.addImage(imgData, 'PNG', x, y, renderWidth, renderHeight, undefined, 'FAST');
 
-      // 2. Overlay uncompressed raw QR code over the exact bounding box for guaranteed 100% scan clarity
-      if (qrDataUrl && qrContainerRef.current) {
-        const qrEl = qrContainerRef.current;
+      // 2. Overlay uncompressed raw QR code over the exact image bounding box for guaranteed 100% scan clarity & crispness
+      if (qrDataUrl && qrImageRef.current) {
+        const qrEl = qrImageRef.current;
         const sheetRect = sheetEl.getBoundingClientRect();
         const qrRect = qrEl.getBoundingClientRect();
 
@@ -146,7 +148,10 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
         const pdfQrW = relW * renderWidth;
         const pdfQrH = relH * renderHeight;
 
-        pdf.addImage(qrDataUrl, 'PNG', pdfQrX, pdfQrY, pdfQrW, pdfQrH);
+        // Clean white backing rect to eliminate any subpixel ghosting from the canvas
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(pdfQrX, pdfQrY, pdfQrW, pdfQrH, 'F');
+        pdf.addImage(qrDataUrl, 'PNG', pdfQrX, pdfQrY, pdfQrW, pdfQrH, undefined, 'NONE');
       }
 
       // Download file directly
@@ -186,7 +191,9 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 md:p-8 bg-black/85 backdrop-blur-md overflow-y-auto font-sans certificate-modal-overlay opacity-100 print:static print:inset-auto print:bg-white print:p-0 print:m-0 print:overflow-visible print:backdrop-blur-none print:shadow-none print:border-none print:opacity-100"
@@ -373,7 +380,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
             <div className="flex items-center justify-end gap-3 text-right">
               <div>
                 <div className="text-[10px] text-slate-500 uppercase font-bold">Scan to Verify</div>
-                <div className="text-[10px] font-bold text-slate-950 underline">type-cert-enterprise.vercel.app</div>
+                <div className="text-[10px] font-bold text-slate-950 underline">typecert.org</div>
                 <div className="text-[8px] text-slate-500 truncate max-w-[110px] mt-0.5">
                   {certificate.signature.slice(0, 16)}...
                 </div>
@@ -383,6 +390,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
               <div ref={qrContainerRef} className="p-1 border border-slate-300 bg-white rounded shrink-0">
                 {qrDataUrl ? (
                   <img
+                    ref={qrImageRef}
                     src={qrDataUrl}
                     alt={`Verification QR Code for ${certificate.publicCode}`}
                     className="h-16 w-16 sm:h-20 sm:w-20 object-contain"
@@ -446,6 +454,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
