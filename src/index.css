@@ -82,11 +82,11 @@
     margin: 8mm;
   }
 
-  /* CRITICAL: Strip backdrop-filter, filter, and box-shadow globally during print.
-     Chrome's Skia print engine fails on backdrop-filter and outputs a solid black rectangle. */
+  /* CRITICAL: Force opacity:1 globally during print and strip backdrop-filters */
   *,
   *::before,
   *::after {
+    opacity: 1 !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     filter: none !important;
@@ -111,9 +111,11 @@
     print-color-adjust: exact !important;
   }
 
-  /* Force all React tree parent wrappers to be white and auto-height */
+  /* Force all React tree parent wrappers to be white, static, and auto-height */
   #root,
   #root > div {
+    display: block !important;
+    position: static !important;
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #0f172a !important;
@@ -123,6 +125,7 @@
     padding: 0 !important;
     margin: 0 !important;
     overflow: visible !important;
+    opacity: 1 !important;
   }
 
   /* Completely hide all website chrome, headers, footers, main content, and buttons */
@@ -135,8 +138,7 @@
   .no-print,
   .print-control-bar,
   .ambient-glow,
-  .sr-only,
-  [aria-hidden="true"] {
+  .sr-only {
     display: none !important;
     visibility: hidden !important;
   }
@@ -157,6 +159,8 @@
     width: 100% !important;
     height: auto !important;
     min-height: 0 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
   .certificate-modal-wrapper {
@@ -170,6 +174,8 @@
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #0f172a !important;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
   /* The actual certificate document sheet for print */
@@ -188,6 +194,8 @@
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     color: #0f172a !important;
+    opacity: 1 !important;
+    visibility: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -195,6 +203,8 @@
   .certificate-sheet * {
     color: #0f172a !important;
     border-color: #cbd5e1 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
   .certificate-sheet h1,
@@ -210,6 +220,12 @@
 
   .certificate-sheet .bg-white {
     background-color: #ffffff !important;
+  }
+
+  .certificate-sheet img {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
   .print-bg-amber {
@@ -228,4 +244,5 @@
     print-color-adjust: exact !important;
   }
 }
+
 
