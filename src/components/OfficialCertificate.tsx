@@ -94,11 +94,11 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
       const sheetEl = sheetRef.current;
 
       // Render the DOM certificate sheet to high-DPI canvas (300 DPI equivalent)
-      const canvas = await html2canvas(sheetEl, {
-        scale: 3,
-        useCORS: true,
+      // Uses browser-native foreignObject rendering so modern CSS colors (like OKLCH) render without parser errors
+      const canvas = await toCanvas(sheetEl, {
+        pixelRatio: 3,
         backgroundColor: '#ffffff',
-        logging: false,
+        cacheBust: true,
       });
 
       const imgData = canvas.toDataURL('image/png', 1.0);
@@ -380,7 +380,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
             <div className="flex items-center justify-end gap-3 text-right">
               <div>
                 <div className="text-[10px] text-slate-500 uppercase font-bold">Scan to Verify</div>
-                <div className="text-[10px] font-bold text-slate-950 underline">type-cert-enterprise.vercel.app</div>
+                <div className="text-[10px] font-bold text-slate-950 underline">typecert.org</div>
                 <div className="text-[8px] text-slate-500 truncate max-w-[110px] mt-0.5">
                   {certificate.signature.slice(0, 16)}...
                 </div>
