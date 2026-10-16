@@ -18,7 +18,10 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  const verificationUrl = `https://type-cert-enterprise.vercel.app/verify/${certificate.publicCode}`;
+  const verificationUrl =
+    typeof window !== 'undefined' && window.location.origin
+      ? `${window.location.origin}/verify/${certificate.publicCode}`
+      : `https://type-cert-enterprise.vercel.app/verify/${certificate.publicCode}`;
   const isDark = theme === 'dark';
 
   // Ensure modal scrolls to the top upon opening
@@ -105,10 +108,10 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 md:p-8 bg-black/85 backdrop-blur-md overflow-y-auto font-sans certificate-modal-overlay animate-in fade-in duration-200 print:static print:inset-auto print:bg-white print:p-0 print:m-0 print:overflow-visible print:backdrop-blur-none print:shadow-none print:border-none print:animate-none"
+      className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 md:p-8 bg-black/85 backdrop-blur-md overflow-y-auto font-sans certificate-modal-overlay opacity-100 print:static print:inset-auto print:bg-white print:p-0 print:m-0 print:overflow-visible print:backdrop-blur-none print:shadow-none print:border-none print:opacity-100"
     >
       <div
-        className={`relative max-w-4xl w-full my-2 sm:my-6 rounded-2xl shadow-2xl p-4 sm:p-8 animate-in zoom-in-95 transition-colors certificate-modal-wrapper print:static print:max-w-none print:w-full print:m-0 print:p-0 print:border-none print:shadow-none print:bg-white print:animate-none ${
+        className={`relative max-w-4xl w-full my-2 sm:my-6 rounded-2xl shadow-2xl p-4 sm:p-8 transition-colors certificate-modal-wrapper opacity-100 print:static print:max-w-none print:w-full print:m-0 print:p-0 print:border-none print:shadow-none print:bg-white print:opacity-100 ${
           isDark
             ? 'bg-slate-900/95 border border-white/15 text-slate-100 shadow-black/60'
             : 'bg-white/95 border border-slate-200 text-slate-900 shadow-slate-300/60'
