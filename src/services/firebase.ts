@@ -23,22 +23,33 @@ import {
 import { Certificate } from '../types';
 import { TestHistoryEntry, UserProfile } from '../utils/storage';
 
-// Initialize Firebase securely via environment variables
+// Secure Firebase configuration with automatic fallback to provisioned applet credentials
+const FALLBACK_CONFIG = {
+  projectId: 'fresh-almanac-zthgf',
+  appId: '1:561369707652:web:479842faa84df3f41e3ed1',
+  apiKey: 'AIzaSyDT85gNR495jk8oEYoo_LvDlL-vMjUe-pM',
+  authDomain: 'fresh-almanac-zthgf.firebaseapp.com',
+  firestoreDatabaseId: 'ai-studio-typecertprofessi-9692de9a-531b-4299-b21c-877b86edb01c',
+  storageBucket: 'fresh-almanac-zthgf.firebasestorage.app',
+  messagingSenderId: '561369707652',
+  measurementId: '',
+};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || '',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || FALLBACK_CONFIG.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || FALLBACK_CONFIG.authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || FALLBACK_CONFIG.projectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || FALLBACK_CONFIG.storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || FALLBACK_CONFIG.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || FALLBACK_CONFIG.appId,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || FALLBACK_CONFIG.measurementId,
 };
 
 const firestoreDatabaseId =
-  import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || undefined;
+  import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || FALLBACK_CONFIG.firestoreDatabaseId;
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase safely
+export const app = initializeApp(firebaseConfig);
 
 // CRITICAL: The app will break without passing firestoreDatabaseId
 export const db = getFirestore(app, firestoreDatabaseId);
@@ -181,7 +192,7 @@ export async function getCertificateFromFirestore(certId: string): Promise<Certi
       return upperSnap.data() as Certificate;
     }
 
-    // Fallback: query collection for publicCode or id match
+    // Fallback: query collection for publicCode or id match (exact & uppercase)
     const colRef = collection(db, 'certificates');
     const q1 = query(colRef, where('publicCode', '==', cleanId.toUpperCase()), limit(1));
     const snap1 = await getDocs(q1);
@@ -193,6 +204,12 @@ export async function getCertificateFromFirestore(certId: string): Promise<Certi
     const snap2 = await getDocs(q2);
     if (!snap2.empty) {
       return snap2.docs[0].data() as Certificate;
+    }
+
+    const q3 = query(colRef, where('publicCode', '==', cleanId), limit(1));
+    const snap3 = await getDocs(q3);
+    if (!snap3.empty) {
+      return snap3.docs[0].data() as Certificate;
     }
 
     return null;
